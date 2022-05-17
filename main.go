@@ -13,7 +13,10 @@ import (
 )
 
 func main() {
-	path := os.Getenv("root")
+	path := os.Getenv("DOWNLOAD_PATH")
+	if path == "" {
+		path = "."
+	}
 
 	r := gin.Default()
 	r.GET("/healthz", func(c *gin.Context) {
