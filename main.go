@@ -7,7 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/user"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/anaskhan96/soup"
 	"github.com/bogem/id3v2"
@@ -16,6 +19,7 @@ import (
 
 func main() {
 	path := os.Getenv("DOWNLOAD_PATH")
+	u := os.Getenv("USER")
 	if path == "" {
 		path = "."
 	}
@@ -81,6 +85,12 @@ func main() {
 		}
 
 		updateMp3Tag(filePath, name)
+
+		group, err := user.Lookup(u)
+		uid, _ := strconv.Atoi(group.Uid)
+		gid, _ := strconv.Atoi(group.Gid)
+
+		err = syscall.Chown(filePath, uid, gid)
 
 		c.JSON(200, gin.H{
 			"message": name,
