@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/anaskhan96/soup"
+	"github.com/bogem/id3v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -62,7 +64,8 @@ func main() {
 		}
 		defer aResp.Body.Close()
 
-		file, err := os.Create(fmt.Sprintf("%s/%s.mp3", path, name))
+		filePath := fmt.Sprintf("%s/%s.mp3", path, name)
+		file, err := os.Create(filePath)
 		if err != nil {
 			c.JSON(500, gin.H{
 				"message": err,
@@ -77,9 +80,34 @@ func main() {
 			return
 		}
 
+		updateMp3Tag(filePath, name)
+
 		c.JSON(200, gin.H{
 			"message": name,
 		})
 	})
 	r.Run()
+}
+
+func updateMp3Tag(path string, title string) error {
+	tag, err := id3v2.Open(path, id3v2.Options{Parse: true})
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error while opening mp3 file: %s", err))
+	}
+	defer tag.Close()
+
+	tag.SetTitle(title)
+	tag.SetAlbum("联合天畅")
+	tag.SetArtist("联合天畅")
+
+	comment := id3v2.CommentFrame{
+		Encoding: id3v2.EncodingUTF8,
+	}
+	tag.AddCommentFrame(comment)
+
+	if err = tag.Save(); err != nil {
+		return errors.New(fmt.Sprintf("Error while saving a tag: %s", err))
+	}
+
+	return nil
 }
