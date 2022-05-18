@@ -15,11 +15,15 @@ func UpdateTags(path string, title string, album string, artist string) error {
 	}
 	defer tag.Close()
 
+	tag.DeleteAllFrames()
+	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
+
 	tag.SetTitle(title)
 	tag.SetAlbum(album)
 	tag.SetArtist(artist)
 
 	if err = tag.Save(); err != nil {
+		log.Printf("[Error] save tag error, %v", err)
 		return errors.New(fmt.Sprintf("Error while saving a tag: %s", err))
 	}
 
