@@ -28,6 +28,22 @@ func main() {
 			"status": "up",
 		})
 	})
+	r.POST("/read", func(c *gin.Context) {
+		path := c.PostForm("path")
+		title, album, artist, err := readMp3Tag(path)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"message": err,
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"title":  title,
+				"album":  album,
+				"artist": artist,
+			})
+		}
+
+	})
 	r.POST("/download", func(c *gin.Context) {
 		url := c.PostForm("url")
 		name := c.PostForm("name")
@@ -102,6 +118,15 @@ func main() {
 		}
 
 		updateMp3Tag(fullPath, name, album, artist)
+		t, a, ar, err := readMp3Tag(fullPath)
+		if err != nil {
+			log.Printf("[Error]读取Mp3标签失败, error = [%s]", err)
+			c.JSON(500, gin.H{
+				"message": err,
+			})
+		}
+
+		log.Printf("[Info]已更新文件Mp3标签, path = [%s], title = [%s], album = [%s], artist = [%s]", fullPath, t, a, ar)
 
 		// if runtime.GOOS == "linux" {
 		// 	log.Printf("[Info] 开始更新文件拥有者为 user = [%s], path = [%s]", u, fullPath)
@@ -130,15 +155,24 @@ func updateMp3Tag(path string, title string, album string, artist string) error 
 	tag.SetAlbum(album)
 	tag.SetArtist(artist)
 
-	comment := id3v2.CommentFrame{
-		Encoding: id3v2.EncodingUTF8,
-	}
-	tag.AddCommentFrame(comment)
-
 	if err = tag.Save(); err != nil {
 		return errors.New(fmt.Sprintf("Error while saving a tag: %s", err))
 	}
-	log.Printf("[Info]已更新文件Mp3标签, path = [%s], title = [%s], album = [%s], artist = [%s]", path, title, album, artist)
 
 	return nil
+}
+
+func readMp3Tag(path string) (string, string, string, error) {
+	tag, err := id3v2.Open(path, id3v2.Options{Parse: true})
+	if err != nil {
+		log.Printf("[Error]读取Mp3文件失败, path = [%s], error = [%s]", path, err)
+		return "", "", "", errors.New(fmt.Sprintf("Error while opening mp3 file: %s", err))
+	}
+	defer tag.Close()
+
+	title := tag.Title()
+	album := tag.Album()
+	artist := tag.Artist()
+
+	return title, album, artist, nil
 }
