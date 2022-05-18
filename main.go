@@ -28,25 +28,9 @@ func main() {
 			"status": "up",
 		})
 	})
-	r.POST("/read", func(c *gin.Context) {
-		path := c.PostForm("path")
-		title, album, artist, err := readMp3Tag(path)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"message": err,
-			})
-		} else {
-			c.JSON(200, gin.H{
-				"title":  title,
-				"album":  album,
-				"artist": artist,
-			})
-		}
-
-	})
 	r.POST("/download", func(c *gin.Context) {
 		url := c.PostForm("url")
-		name := c.PostForm("name")
+		// articleTitle := c.PostForm("name")
 		album := c.PostForm("album")
 		artist := c.PostForm("artist")
 
@@ -79,66 +63,66 @@ func main() {
 		content := string(body)
 		defer resp.Body.Close()
 
+		files := make([]string, 0)
+
 		doc := soup.HTMLParse(content)
-		if name == "" {
-			name = doc.Find("h1", "id", "activity-name").Text()
-		}
-		name = strings.TrimSpace(name)
-		audio_html := doc.FindAll("mpvoice", "class", "audio_iframe")
-		file_id := audio_html[0].Attrs()["voice_encode_fileid"]
-		// https: //res.wx.qq.com/voice/getvoice?mediaid=
-		aResp, err := http.Get(fmt.Sprintf("https://res.wx.qq.com/voice/getvoice?mediaid=%s", file_id))
-		if err != nil {
-			log.Printf("[Error] 获取音频内容失败, error = [%s]", err)
-			c.JSON(500, gin.H{
-				"message": err,
-			})
-			return
-		}
-		defer aResp.Body.Close()
-
-		dir := fmt.Sprintf("%s/%s/%s", path, album, artist)
-		os.MkdirAll(dir, os.FileMode(0775))
-		fullPath := fmt.Sprintf("%s/%s.mp3", dir, name)
-		file, err := os.Create(fullPath)
-		if err != nil {
-			log.Printf("[Error] 创建本地文件失败, path = [%s], error = [%s]", fullPath, err)
-			c.JSON(500, gin.H{
-				"message": err,
-			})
-			return
-		}
-		_, err = io.Copy(file, aResp.Body)
-		if err != nil {
-			log.Printf("[Error] 写入本地文件失败, error = [%s]", err)
-			c.JSON(500, gin.H{
-				"message": err,
-			})
-			return
-		}
-
-		updateMp3Tag(fullPath, name, album, artist)
-		t, a, ar, err := readMp3Tag(fullPath)
-		if err != nil {
-			log.Printf("[Error]读取Mp3标签失败, error = [%s]", err)
-			c.JSON(500, gin.H{
-				"message": err,
-			})
-		}
-
-		log.Printf("[Info]已更新文件Mp3标签, path = [%s], title = [%s], album = [%s], artist = [%s]", fullPath, t, a, ar)
-
-		// if runtime.GOOS == "linux" {
-		// 	log.Printf("[Info] 开始更新文件拥有者为 user = [%s], path = [%s]", u, fullPath)
-		// 	group, _ := user.Lookup(u)
-		// 	uid, _ := strconv.Atoi(group.Uid)
-		// 	gid, _ := strconv.Atoi(group.Gid)
-		// 	_ = syscall.Chown(fullPath, uid, gid)
+		// if articleTitle == "" {
+		// 	articleTitle = doc.Find("h1", "id", "activity-name").Text()
 		// }
+		// articleTitle = strings.TrimSpace(articleTitle)
+		audioHtml := doc.FindAll("mpvoice", "class", "audio_iframe")
+		for _, tag := range audioHtml {
+			fileId := tag.Attrs()["voice_encode_fileid"]
+			fileName := tag.Attrs()["name"]
 
-		log.Printf("[Info] 音频文件保存成功, name = [%s], path = [%s]", name, fullPath)
+			// https: //res.wx.qq.com/voice/getvoice?mediaid=
+			aResp, err := http.Get(fmt.Sprintf("https://res.wx.qq.com/voice/getvoice?mediaid=%s", fileId))
+			if err != nil {
+				log.Printf("[Error] 获取音频内容失败, error = [%s]", err)
+				c.JSON(500, gin.H{
+					"message": err,
+				})
+				return
+			}
+			defer aResp.Body.Close()
+
+			dir := fmt.Sprintf("%s/%s/%s", path, album, artist)
+			os.MkdirAll(dir, os.FileMode(0775))
+			fullPath := fmt.Sprintf("%s/%s.mp3", dir, fileName)
+			file, err := os.Create(fullPath)
+			if err != nil {
+				log.Printf("[Error] 创建本地文件失败, path = [%s], error = [%s]", fullPath, err)
+				c.JSON(500, gin.H{
+					"message": err,
+				})
+				return
+			}
+			_, err = io.Copy(file, aResp.Body)
+			if err != nil {
+				log.Printf("[Error] 写入本地文件失败, error = [%s]", err)
+				c.JSON(500, gin.H{
+					"message": err,
+				})
+				return
+			}
+
+			updateMp3Tag(fullPath, fileName, album, artist)
+			t, a, ar, err := readMp3Tag(fullPath)
+			if err != nil {
+				log.Printf("[Error] 读取Mp3标签失败, error = [%s]", err)
+				c.JSON(500, gin.H{
+					"message": err,
+				})
+			}
+
+			log.Printf("[Info] 已更新文件Mp3标签, path = [%s], title = [%s], album = [%s], artist = [%s]", fullPath, t, a, ar)
+			log.Printf("[Info] 音频文件保存成功, name = [%s], path = [%s]", fileName, fullPath)
+
+			files = append(files, fileName)
+		}
+
 		c.JSON(200, gin.H{
-			"message": name,
+			"message": strings.Join(files, ", "),
 		})
 	})
 	r.Run()
