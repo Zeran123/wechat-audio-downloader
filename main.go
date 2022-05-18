@@ -138,6 +138,7 @@ func updateMp3Tag(path string, title string, album string, artist string) error 
 	if err = tag.Save(); err != nil {
 		return errors.New(fmt.Sprintf("Error while saving a tag: %s", err))
 	}
+	log.Printf("[Info]已更新文件Mp3标签, path = [%s], title = [%s], album = [%s], artist = [%s]", path, title, album, artist)
 
 	return nil
 }
