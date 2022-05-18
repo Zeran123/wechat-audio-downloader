@@ -10,6 +10,8 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}",
+      // "args": ["serve"],
+      "args": ["mp3", "./我的故事/来自网络/"],
       "env": {
         "DOWNLOAD_PATH": ".",
         "GIN_MODE": "debug"
