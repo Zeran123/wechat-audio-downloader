@@ -8,11 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/user"
-	"runtime"
-	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/anaskhan96/soup"
 	"github.com/bogem/id3v2"
@@ -21,7 +17,7 @@ import (
 
 func main() {
 	path := os.Getenv("DOWNLOAD_PATH")
-	u := os.Getenv("USER")
+	// u := os.Getenv("USER")
 	if path == "" {
 		path = "."
 	}
@@ -107,13 +103,13 @@ func main() {
 
 		updateMp3Tag(fullPath, name, album, artist)
 
-		if runtime.GOOS == "linux" {
-			log.Printf("[Info] 开始更新文件拥有者为 user = [%s], path = [%s]", u, fullPath)
-			group, _ := user.Lookup(u)
-			uid, _ := strconv.Atoi(group.Uid)
-			gid, _ := strconv.Atoi(group.Gid)
-			_ = syscall.Chown(fullPath, uid, gid)
-		}
+		// if runtime.GOOS == "linux" {
+		// 	log.Printf("[Info] 开始更新文件拥有者为 user = [%s], path = [%s]", u, fullPath)
+		// 	group, _ := user.Lookup(u)
+		// 	uid, _ := strconv.Atoi(group.Uid)
+		// 	gid, _ := strconv.Atoi(group.Gid)
+		// 	_ = syscall.Chown(fullPath, uid, gid)
+		// }
 
 		log.Printf("[Info] 音频文件保存成功, name = [%s], path = [%s]", name, fullPath)
 		c.JSON(200, gin.H{
