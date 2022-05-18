@@ -11,7 +11,8 @@
       "mode": "auto",
       "program": "${workspaceFolder}",
       "env": {
-        "DOWNLOAD_PATH": "."
+        "DOWNLOAD_PATH": ".",
+        "GIN_MODE": "debug"
       }
     }
   ]
