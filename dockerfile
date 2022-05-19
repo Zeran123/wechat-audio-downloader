@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM ubuntu:22.04
 # WORKDIR /www
 
 # ENV GOPROXY=https://proxy.golang.com.cn,direct
@@ -7,8 +7,7 @@ FROM golang:latest
 # COPY go.sum /www/go.sum
 # COPY main.go /www/main.go
 
-COPY audio-downloader /usr/local/bin/
+COPY ./audio-downloader /audio-downloader
+RUN chmod +x /audio-downloader
 
 EXPOSE 8080
-
-ENTRYPOINT audio-downloader serve

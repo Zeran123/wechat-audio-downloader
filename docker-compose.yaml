@@ -7,6 +7,7 @@ services:
       DOWNLOAD_PATH: /downloads
       LANG: en_US.UTF-8
     volumes:
-    - ./downloads:/downloads
+    - /path/to/download:/downloads
     ports:
     - "8091:8080"
+    command: ./audio-downloader serve
