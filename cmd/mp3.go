@@ -23,6 +23,7 @@ import (
 
 	"github.com/ZeRanW/wechat-audio-downloader/internal/util"
 	"github.com/spf13/cobra"
+	"github.com/wellmoon/m4aTag/mtag"
 )
 
 var title string
@@ -52,7 +53,7 @@ var mp3Cmd = &cobra.Command{
 			}
 			for _, dir := range dirs {
 				info, _ := dir.Info()
-				updateFile(info.Name(), fmt.Sprintf("%s/%s", path, info.Name()))
+				updateFile(info.Name(), fmt.Sprintf("%s%s", path, info.Name()))
 			}
 		}
 
@@ -63,23 +64,33 @@ func updateFile(fileName string, path string) {
 	fmt.Printf("[Info] 开始更新文件 -> %s\n", path)
 	// 单个文件
 	titleTag := ""
+	ext := filepath.Ext(fileName)
 	if title == "{FILE_NAME}" {
-		ext := filepath.Ext(fileName)
-		if ext != ".mp3" {
+		if ext != ".mp3" && ext != ".m4a" {
 			return
 		}
 		titleTag = strings.Replace(fileName, ext, "", -1)
 	} else {
 		titleTag = title
 	}
-	util.UpdateTags(path, titleTag, album, artist)
-	t, a, aa, err := util.ReadTags(path)
-	if err != nil {
-		fmt.Printf("[Error] 读取Mp3标签失败, error = [%v]\n", err)
-		return
-	}
+	if ext == ".mp3" {
+		util.UpdateTags(path, titleTag, album, artist)
+		t, a, aa, err := util.ReadTags(path)
+		if err != nil {
+			fmt.Printf("[Error] 读取Mp3标签失败, error = [%v]\n", err)
+			return
+		}
+		fmt.Printf("[Info] 更新后的MP3标签 -> title = [%s], ablum = [%s], artist = [%s]\n", t, a, aa)
+	} else if ext == ".m4a" {
 
-	fmt.Printf("[Info] 更新后的MP3标签 -> title = [%s], ablum = [%s], artist = [%s]\n", t, a, aa)
+		mtag.UpdateM4aTag(true, path, titleTag, artist, album, "", "")
+		tag, err := mtag.ReadM4aTag(path)
+		if err != nil {
+			fmt.Printf("[Error] 读取M4a标签失败, error = [%v]\n", err)
+			return
+		}
+		fmt.Printf("[Info] 更新后的M4a标签 -> title = [%s], ablum = [%s], artist = [%s]\n", tag.Name, tag.Album, tag.Artist)
+	}
 }
 
 func init() {
