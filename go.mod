@@ -6,6 +6,7 @@ require (
 	github.com/anaskhan96/soup v1.2.5
 	github.com/bogem/id3v2 v1.2.0
 	github.com/gin-gonic/gin v1.7.7
+	github.com/spf13/cobra v1.4.0
 )
 
 require (
@@ -20,7 +21,6 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/wellmoon/m4aTag v0.0.0-20220126100406-d0ab69127f34 // indirect
