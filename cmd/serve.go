@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ZeRanW/wechat-audio-downloader/internal/util"
 	"github.com/anaskhan96/soup"
@@ -59,7 +61,14 @@ var serveCmd = &cobra.Command{
 				artist = "来自网络"
 			}
 
-			resp, err := http.Get(url)
+			client := &http.Client{
+				Timeout: time.Duration(30 * time.Second),
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				},
+			}
+
+			resp, err := client.Get(url)
 			if err != nil {
 				log.Printf("[Error] 打开公众号页面失败, url = [%s], error = [%s]", url, err)
 				c.JSON(500, gin.H{
@@ -89,7 +98,7 @@ var serveCmd = &cobra.Command{
 				fileName := tag.Attrs()["name"]
 
 				// https: //res.wx.qq.com/voice/getvoice?mediaid=
-				aResp, err := http.Get(fmt.Sprintf("https://res.wx.qq.com/voice/getvoice?mediaid=%s", fileId))
+				aResp, err := client.Get(fmt.Sprintf("https://res.wx.qq.com/voice/getvoice?mediaid=%s", fileId))
 				if err != nil {
 					log.Printf("[Error] 获取音频内容失败, error = [%s]", err)
 					c.JSON(500, gin.H{
